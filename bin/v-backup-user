@@ -47,11 +47,12 @@ mkdir -p $BACKUP
 
 if [ "$BACKUP_SYSTEM" = 's3' ]; then
     if [ ! -x /usr/bin/s3fs ]; then
-        echo "Error: s3fs binary non found!" >> $log
+        echo "Error: s3fs binary non found!"
         exit 1
     fi
     # Mount s3 bucket
-    /usr/bin/s3fs $S3BUCKET $BACKUP -o use_cache=/tmp -o passwd_file=$VESTA/conf/s3passwd
+    source $VESTA/conf/s3.backup.conf
+    /usr/bin/s3fs $BUCKET /home/backup -o use_cache=/tmp -o passwd_file=$VESTA/conf/s3passwd || exit 1
 fi
 
 # Get current time
@@ -828,6 +829,7 @@ msg="$msg\n-- SUMMARY --"
 for backup_type in $(echo -e "${BACKUP_SYSTEM//,/\\n}"); do
     case $backup_type in
         local) local_backup ;;
+        s3)    local_backup ;;
         ftp)   ftp_backup ;;
         sftp)  sftp_backup ;;
     esac
@@ -881,6 +883,7 @@ chmod 660 $USER_DATA/backup.conf
 
 if [ "$BACKUP_SYSTEM" = 's3' ]; then
     # Unmount s3 bucket
+    cd /
     umount /home/backup
 fi
 

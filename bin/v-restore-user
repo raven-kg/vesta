@@ -38,11 +38,12 @@ source $VESTA/conf/vesta.conf
 
 if [ "$BACKUP_SYSTEM" = 's3' ]; then
     if [ ! -x /usr/bin/s3fs ]; then
-        echo "Error: s3fs binary non found!" >> $log
+        echo "Error: s3fs binary non found!"
         exit 1
     fi
     # Mount s3 bucket
-    /usr/bin/s3fs $S3BUCKET $BACKUP -o use_cache=/tmp -o passwd_file=$VESTA/conf/s3passwd
+    source $VESTA/conf/s3.backup.conf
+    /usr/bin/s3fs $BUCKET /home/backup -o use_cache=/tmp -o passwd_file=$VESTA/conf/s3passwd || exit 1
 fi
 
 # Check backup function
@@ -834,6 +835,7 @@ rm -rf $tmpdir
 
 if [ "$BACKUP_SYSTEM" = 's3' ]; then
     # Unmount s3 bucket
+    cd /tmp
     umount /home/backup
 fi
 

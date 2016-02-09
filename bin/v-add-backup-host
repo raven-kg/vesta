@@ -13,7 +13,7 @@
 type=$1
 if [ "$type" = 's3' ]; then
     bucket=$2
-    user=$4
+    user=$3
     key=$4; HIDE=4
     path=${5-/backup}
 else
@@ -101,7 +101,9 @@ EOF
 
 if [ "$type" != 'local' ];then
     check_args '4' "$#" "TYPE HOST USERNAME PASSWORD [PATH] [PORT] for ftp/sftp hosts or TYPE BUCKET USER KEY [PATH] for Amazon S3"
-    validate_format 'host'
+    if [ "$type" != 's3' ]; then
+        validate_format 'host'
+    fi
     is_password_valid
     if [ "$type" = 'sftp' ]; then
         which expect >/dev/null 2>&1
@@ -160,13 +162,12 @@ fi
 
 # Adding backup host
 if [ $type != 'local' ]; then
-    if [ $type = 's3' ]; then
+    if [ "$type" = 's3' ]; then
         echo "BUCKET='$bucket'
-        BPATH='$path'
-        TIME='$TIME'
-        DATE='$DATE'" > $VESTA/conf/$type.backup.conf
+        BPATH='$path'" > $VESTA/conf/$type.backup.conf
         chmod 660 $VESTA/conf/$type.backup.conf
         echo "$user:$key" > $VESTA/conf/s3passwd
+        chmod 0600 $VESTA/conf/s3passwd
     else
         echo "HOST='$host'
         USERNAME='$user'
@@ -176,6 +177,7 @@ if [ $type != 'local' ]; then
         TIME='$TIME'
         DATE='$DATE'" > $VESTA/conf/$type.backup.conf
         chmod 660 $VESTA/conf/$type.backup.conf
+    fi
 fi
 
 
