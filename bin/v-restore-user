@@ -36,6 +36,15 @@ source $VESTA/func/db.sh
 source $VESTA/func/rebuild.sh
 source $VESTA/conf/vesta.conf
 
+if [ "$BACKUP_SYSTEM" = 's3' ]; then
+    if [ ! -x /usr/bin/s3fs ]; then
+        echo "Error: s3fs binary non found!" >> $log
+        exit 1
+    fi
+    # Mount s3 bucket
+    /usr/bin/s3fs $S3BUCKET $BACKUP -o use_cache=/tmp -o passwd_file=$VESTA/conf/s3passwd
+fi
+
 # Check backup function
 is_backup_valid() {
     if [ ! -e "$BACKUP/$backup" ]; then
@@ -822,6 +831,11 @@ fi
 
 # Remove temporary data
 rm -rf $tmpdir
+
+if [ "$BACKUP_SYSTEM" = 's3' ]; then
+    # Unmount s3 bucket
+    umount /home/backup
+fi
 
 # Clean restore queue
 sed -i "/v-restore-user $user /d" $VESTA/data/queue/backup.pipe

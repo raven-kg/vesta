@@ -11,11 +11,18 @@
 
 # Argument definition
 type=$1
-host=$2
-user=$3
-password=$4; HIDE=4
-path=${5-/backup}
-port=$6
+if [ "$type" = 's3' ]; then
+    bucket=$2
+    user=$4
+    key=$4; HIDE=4
+    path=${5-/backup}
+else
+    host=$2
+    user=$3
+    password=$4; HIDE=4
+    path=${5-/backup}
+    port=$6
+fi
 
 # Includes
 source $VESTA/func/main.sh
@@ -93,7 +100,7 @@ EOF
 #----------------------------------------------------------#
 
 if [ "$type" != 'local' ];then
-    check_args '4' "$#" "TYPE HOST USERNAME PASSWORD [PATH] [PORT]"
+    check_args '4' "$#" "TYPE HOST USERNAME PASSWORD [PATH] [PORT] for ftp/sftp hosts or TYPE BUCKET USER KEY [PATH] for Amazon S3"
     validate_format 'host'
     is_password_valid
     if [ "$type" = 'sftp' ]; then
@@ -153,14 +160,22 @@ fi
 
 # Adding backup host
 if [ $type != 'local' ]; then
-    echo "HOST='$host'
-    USERNAME='$user'
-    PASSWORD='$password'
-    BPATH='$path'
-    PORT='$port'
-    TIME='$TIME'
-    DATE='$DATE'" > $VESTA/conf/$type.backup.conf
-    chmod 660 $VESTA/conf/$type.backup.conf
+    if [ $type = 's3' ]; then
+        echo "BUCKET='$bucket'
+        BPATH='$path'
+        TIME='$TIME'
+        DATE='$DATE'" > $VESTA/conf/$type.backup.conf
+        chmod 660 $VESTA/conf/$type.backup.conf
+        echo "$user:$key" > $VESTA/conf/s3passwd
+    else
+        echo "HOST='$host'
+        USERNAME='$user'
+        PASSWORD='$password'
+        BPATH='$path'
+        PORT='$port'
+        TIME='$TIME'
+        DATE='$DATE'" > $VESTA/conf/$type.backup.conf
+        chmod 660 $VESTA/conf/$type.backup.conf
 fi
 
 
